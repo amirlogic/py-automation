@@ -6,6 +6,41 @@ import shutil
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
+def wait_until_unlocked(file_path, timeout=60, check_interval=2):
+
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            with open(file_path, "rb"):
+                return True  # file opened successfully
+        except PermissionError:
+            print(f"File still locked: {file_path}")
+        except FileNotFoundError:
+            print(f"File not found during wait: {file_path}")
+            return False
+        time.sleep(check_interval)
+    return False
+
+def wait_for_file_stable(file_path, stable_seconds=5):
+    
+    last_size = -1
+    stable_time = 0
+
+    while stable_time < stable_seconds:
+        try:
+            current_size = os.path.getsize(file_path)
+        except FileNotFoundError:
+            return False  # file disappeared
+        
+        if current_size == last_size:
+            stable_time += 1
+        else:
+            stable_time = 0
+            last_size = current_size
+
+        time.sleep(1)
+
+    return True
 
 class MyEventHandler(FileSystemEventHandler):
     def __init__(self, action=None, dest_dir=None, extension=None):
@@ -21,6 +56,16 @@ class MyEventHandler(FileSystemEventHandler):
         if file_path.endswith(".tmp"):
             print(f"Ignoring temporary file: {file_path}")
             return
+
+        if not wait_until_unlocked(file_path, timeout=120):
+            print(f"Timeout: file still locked → skipping {file_path}")
+            return
+
+        if not wait_for_file_stable(file_path, stable_seconds=5):
+            print(f"File never stabilized → skipping: {file_path}")
+            return
+
+        time.sleep(10)
 
         # If extension filter is set, enforce it
         if self.extension:
