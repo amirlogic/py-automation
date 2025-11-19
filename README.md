@@ -3,4 +3,6 @@ Python file automation scripts
 
 ## watchfile
 
-`python watchfile.py arg1 arg2 arg3`
+Watch a directory and take action
+
+`python watchfile.py <watchdir> <action> <destfolder> <extension>`
