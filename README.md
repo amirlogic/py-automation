@@ -3,7 +3,7 @@ Python file automation scripts
 
 ## watchfile
 
-Watch a directory and take action
+Watch a directory and take action. Requires `watchdog`.
 
 `python watchfile.py <watchdir> <action> <destfolder> <extension>`
 
